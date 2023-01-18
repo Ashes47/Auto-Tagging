@@ -3,6 +3,8 @@ import torch
 from facenet_pytorch import MTCNN, InceptionResnetV1
 import pickle
 from scipy.spatial.distance import cosine
+from PIL import Image
+from constants import temp_file, embeddings_name, identity_name
 
 def get_device():
     if torch.cuda.is_available():
@@ -19,18 +21,19 @@ resnet = InceptionResnetV1(pretrained='vggface2').eval()
 def load_data():
     embeddings=[]
     identity = []
-    with open("embeddings.txt","rb") as f:
+    with open(embeddings_name,"rb") as f:
         embeddings = pickle.load(f)
-    with open("identity.txt","rb") as f:
+    with open(identity_name,"rb") as f:
         identity = pickle.load(f)
-
     return embeddings, identity
 
+
 def save_data(embeddings, identity):
-  with open("embeddings.txt", "wb") as fp: 
+  with open(embeddings_name, "wb") as fp: 
     pickle.dump(embeddings, fp)    
-  with open("identity.txt", "wb") as fp:  
+  with open(identity_name, "wb") as fp:  
       pickle.dump(identity, fp)
+
 
 def get_accurate_detections(aligned_images, probs):
   aligned = []
@@ -39,6 +42,7 @@ def get_accurate_detections(aligned_images, probs):
       aligned.append(image)
   return torch.stack(aligned)
   
+
 def get_emb(image):
   aligned_images, probs = mtcnn(image, return_prob=True)
   if probs == [None]:
@@ -49,7 +53,8 @@ def get_emb(image):
   return embeddings
 
 
-async def add_face(image, name):
+async def add_face(name):
+  image = Image.open(temp_file)
   embeddings, identity = load_data()
   emb = get_emb(image)
   if len(emb) == 0:
@@ -58,6 +63,7 @@ async def add_face(image, name):
   identity.append(name)
   save_data(embeddings, identity)
   return "Face successfully added"
+
 
 def match_face_with_database(new_emb):
   embeddings, identity = load_data()
@@ -71,6 +77,7 @@ def match_face_with_database(new_emb):
   if per > 70.00:
     return identity[index[0]]
   return []
+
 
 def recog_faces(image):
   embs = get_emb(image)

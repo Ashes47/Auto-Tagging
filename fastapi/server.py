@@ -24,19 +24,19 @@ async def get_threads_running():
 ############## Auto Tagging ##########################################################
 @app.post("/auto_tag")
 async def auto_tagging(request: Data):
-    image = base64ToImage(request.image)
+    base64ToImage(request.image)
     tags = request.tags
 
-    persons, generated_tags = get_tags_and_person_mask(image)
+    persons, generated_tags = get_tags_and_person_mask()
     if tags.get("category") == "human":
         for person in persons:
             name = recog_faces(person)
             if name != []:
                 generated_tags.append(name[0])
         if tags.get("name"):
-            print(await add_face(image, tags["name"]))
-    await clear_temp()
+            print(await add_face(tags["name"]))
     response = {"tags": set(generated_tags)}
+    await clear_temp()
     return response
 ######################################################################################
 

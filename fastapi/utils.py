@@ -1,21 +1,21 @@
 import base64
 from PIL import Image
+from constants import temp_file
 import os
 
 def imageToBase64(image):
-    image.save('temp.jpeg')
-    with open('temp.jpeg', "rb") as image_file:
+    image.save(temp_file)
+    with open(temp_file, "rb") as image_file:
       b64_image = str(base64.b64encode(image_file.read()))[1:-1]
-    os.remove('temp.jpeg')
     return b64_image
 
 def base64ToImage(data):
     imgdata = base64.b64decode(data)
-    with open('temp.jpeg', 'wb') as f:
+    with open(temp_file, 'wb') as f:
         f.write(imgdata)
-    image = Image.open('temp.jpeg')
-    return image
+    return
 
 async def clear_temp():
-    os.remove('temp.jpeg')
+    if os.path.exists(temp_file):
+        os.remove(temp_file)
     
