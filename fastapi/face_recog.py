@@ -56,7 +56,7 @@ def get_emb(image):
   return embeddings
 
 
-async def add_face(name):
+def add_face(name):
   image = Image.open(temp_file)
   embeddings, identity = load_data()
   emb = get_emb(image)

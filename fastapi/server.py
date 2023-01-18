@@ -19,7 +19,7 @@ app = FastAPI(
 
 ############## Auto Tagging ##########################################################
 @app.post("/auto_tag")
-async def auto_tagging(request: Data):
+def auto_tagging(request: Data):
     base64ToImage(request.image)
     tags = request.tags
     training_response = "No training requested"
@@ -36,24 +36,24 @@ async def auto_tagging(request: Data):
             if name != []:
                 generated_tags.append(name[0])
         if tags.get("name"):
-            print(await add_face(tags["name"]))
+            print(add_face(tags["name"]))
     
     if tags.get("tag"):
         if tags["tag"].get("class") and tags["tag"].get("pixel_box"):
             training_response = "Added data for training"
-            await add_class(tags["tag"]["class"], tags["tag"]["pixel_box"])
+            add_class(tags["tag"]["class"], tags["tag"]["pixel_box"])
         else:
             training_response = "Class or pixel box missing which is required for training"
     response["tags"] = set(generated_tags)
     response["training_response"] = training_response
-    await clear_temp()
+    clear_temp()
     return response
 ######################################################################################
 
 
 ############## Custom Object Detection ###############################################
 @app.get("/train_custom_model")
-async def train_custom_model():
+def train_custom_model():
     if len(CUSTOM_CLASS_LIST["class_list"]) == 0:
         return {'result': 'No data to train on'}
     if CUSTOM_CLASS_LIST["training_status"]:
@@ -61,7 +61,7 @@ async def train_custom_model():
     else:
         CUSTOM_CLASS_LIST["training_status"] = True
         try:
-            await train_custom_object_detection(25)
+            train_custom_object_detection(1)
         except Exception as e:
             CUSTOM_CLASS_LIST["training_status"] = False
             return {'result': 'Training Failed', 'error': e}
@@ -70,7 +70,7 @@ async def train_custom_model():
 
 
 @app.get("/get_training_status")
-async def get_training_status():
+def get_training_status():
     if CUSTOM_CLASS_LIST["training_status"]:
         return {'result': 'Model training'}
     else:
@@ -78,14 +78,14 @@ async def get_training_status():
 
 
 @app.get("/get_custom_class_info")
-async def get_custom_class_info():
+def get_custom_class_info():
     return CUSTOM_CLASS_LIST
 ######################################################################################
 
 
 ############## Face Recognition ######################################################
 @app.get("/reset_facial_data")
-async def reset_facial_data():
+def reset_facial_data():
     save_data([], [])
     return {'result': 'Face data reset succesfully'}
 ######################################################################################
@@ -93,7 +93,7 @@ async def reset_facial_data():
 
 ############## Threads ##############################################################
 @app.get("/threads")
-async def get_threads_running():
+def get_threads_running():
     return {
         "threads_running": threading.active_count(),
         "device": get_device()

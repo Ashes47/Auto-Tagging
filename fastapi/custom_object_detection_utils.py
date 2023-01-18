@@ -80,7 +80,7 @@ def save_image_info(folder_to_save, unique_name, image, class_count, yolo_box):
     write_yaml()
 
 
-async def add_class(custom_class, pixel_box):
+def add_class(custom_class, pixel_box):
     image = cv2.imread(temp_file)
     image_height, image_width, _ = image.shape
     yolo_box = pixel_box_to_yolobox(pixel_box, image_width, image_height)
@@ -96,7 +96,7 @@ async def add_class(custom_class, pixel_box):
     unique_name = get_unique_name(custom_class, folder_to_save)
     save_image_info(folder_to_save, unique_name, image, class_count, yolo_box)
 
-async def train_custom_object_detection(epochs):
+def train_custom_object_detection(epochs):
     model = YOLO(model_name)  # load a pretrained model (recommended for training)
     # Use the model
     model.train(data="data.yaml", epochs=epochs, imgsz=640)

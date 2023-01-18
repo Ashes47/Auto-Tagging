@@ -15,7 +15,7 @@ def base64ToImage(data):
         f.write(imgdata)
     return
 
-async def clear_temp():
+def clear_temp():
     if os.path.exists(temp_file):
         os.remove(temp_file)
     
