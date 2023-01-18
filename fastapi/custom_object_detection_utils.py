@@ -12,10 +12,10 @@ def save_custom_info():
 
 def pixel_box_to_yolobox(pixel_box, image_width, image_height):
     x1, y1, x2, y2 = pixel_box[0], pixel_box[1], pixel_box[2], pixel_box[3]
-    x = abs(x2-x1)/(2*image_width)
-    y = abs(y1 -y2)/(2*image_height)
-    w = abs(x2-x1)/image_width
-    h = abs(y1 -y2)/image_height
+    x = abs(x1 + x2)/(2*image_width)
+    y = abs(y1 + y2)/(2*image_height)
+    w = abs(x1 - x2)/image_width
+    h = abs(y1 - y2)/image_height
     yolo_box = [x, y, w, h]
     return yolo_box
 
@@ -61,7 +61,7 @@ def write_yaml():
     # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
     # dataset root dir
     file = open("data.yaml", "w")
-    file.writelines("path: custom_dataset/ \n")
+    file.writelines("path: " + os.getcwd() + "/custom_dataset/ \n")
     file.writelines("train: train/images/ \n") # train images (relative to 'path')
     file.writelines("val: valid/images/ \n") # val images (relative to 'path')
 
@@ -99,7 +99,6 @@ async def add_class(custom_class, pixel_box):
 def train_custom_object_detection(epochs):
     model = YOLO(model_name)  # load a pretrained model (recommended for training)
     # Use the model
-    model.train(data="/content/data.yaml", epochs=epochs, imgsz=640)
+    model.train(data="data.yaml", epochs=epochs, imgsz=640)
     os.rename("runs/detect/train/weights/best.pt", "/models/custom_model.pt")
     shutil.rmtree("runs")
-    CUSTOM_CLASS_LIST["training_status"] = False

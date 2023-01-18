@@ -1,4 +1,5 @@
 tagging/
 **/__pycache__
-fastapi/models/yolov8m.pt
+fastapi/**/yolov8m.pt
 .vscode
+fastapi/**/labels.cache

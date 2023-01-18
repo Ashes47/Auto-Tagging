@@ -40,7 +40,7 @@ async def auto_tagging(request: Data):
     
     if tags.get("tag"):
         if tags["tag"].get("class") and tags["tag"].get("pixel_box"):
-            training_response = "Inititaing Training"
+            training_response = "Added data for training"
             await add_class(tags["tag"]["class"], tags["tag"]["pixel_box"])
         else:
             training_response = "Class or pixel box missing which is required for training"
@@ -60,7 +60,12 @@ async def train_custom_model():
         return {'result': 'Model already training'}
     else:
         CUSTOM_CLASS_LIST["training_status"] = True
-        await train_custom_object_detection(25)
+        try:
+            await train_custom_object_detection(25)
+        except Exception as e:
+            CUSTOM_CLASS_LIST["training_status"] = False
+            return {'result': 'Training Failed', 'error': e}
+        CUSTOM_CLASS_LIST["training_status"] = False
         return {'result': 'Training started'}
 
 
