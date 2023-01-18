@@ -4,6 +4,7 @@ from facenet_pytorch import MTCNN, InceptionResnetV1
 import pickle
 from scipy.spatial.distance import cosine
 from PIL import Image
+import os
 from constants import temp_file, embeddings_name, identity_name
 
 def get_device():
@@ -21,10 +22,12 @@ resnet = InceptionResnetV1(pretrained='vggface2').eval()
 def load_data():
     embeddings=[]
     identity = []
-    with open(embeddings_name,"rb") as f:
-        embeddings = pickle.load(f)
-    with open(identity_name,"rb") as f:
-        identity = pickle.load(f)
+    if os.path.exists(embeddings_name):
+      with open(embeddings_name,"rb") as f:
+          embeddings = pickle.load(f)
+    if os.path.exists(identity_name):
+      with open(identity_name,"rb") as f:
+          identity = pickle.load(f)
     return embeddings, identity
 
 
@@ -32,7 +35,7 @@ def save_data(embeddings, identity):
   with open(embeddings_name, "wb") as fp: 
     pickle.dump(embeddings, fp)    
   with open(identity_name, "wb") as fp:  
-      pickle.dump(identity, fp)
+    pickle.dump(identity, fp)
 
 
 def get_accurate_detections(aligned_images, probs):
