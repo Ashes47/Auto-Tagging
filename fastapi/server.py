@@ -17,16 +17,6 @@ app = FastAPI(
 )
 
 
-############## Threads ##############################################################
-@app.get("/threads")
-async def get_threads_running():
-    return {
-        "threads_running": threading.active_count(),
-        "device": get_device()
-        }
-######################################################################################
-
-
 ############## Auto Tagging ##########################################################
 @app.post("/auto_tag")
 async def auto_tagging(request: Data):
@@ -93,6 +83,16 @@ async def get_custom_class_info():
 async def reset_facial_data():
     save_data([], [])
     return {'result': 'Face data reset succesfully'}
+######################################################################################
+
+
+############## Threads ##############################################################
+@app.get("/threads")
+async def get_threads_running():
+    return {
+        "threads_running": threading.active_count(),
+        "device": get_device()
+        }
 ######################################################################################
 
 
