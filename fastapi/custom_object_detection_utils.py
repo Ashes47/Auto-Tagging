@@ -96,9 +96,9 @@ async def add_class(custom_class, pixel_box):
     unique_name = get_unique_name(custom_class, folder_to_save)
     save_image_info(folder_to_save, unique_name, image, class_count, yolo_box)
 
-def train_custom_object_detection(epochs):
+async def train_custom_object_detection(epochs):
     model = YOLO(model_name)  # load a pretrained model (recommended for training)
     # Use the model
     model.train(data="data.yaml", epochs=epochs, imgsz=640)
-    os.rename("runs/detect/train/weights/best.pt", "/models/custom_model.pt")
+    os.rename("./runs/detect/train/weights/best.pt", "./models/custom_model.pt")
     shutil.rmtree("runs")
