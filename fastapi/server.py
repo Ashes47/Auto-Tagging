@@ -5,6 +5,10 @@ from models import Data
 from utils import base64ToImage, clear_temp
 from face_recog import save_data, get_device, add_face, recog_faces
 from object_detection import get_tags_and_person_mask
+from constants import CUSTOM_CLASS_LIST
+from custom_object_detection import get_custom_tags
+from custom_object_detection_utils import add_class, train_custom_object_detection
+
 
 app = FastAPI(
     title="Auto-Tagging",
@@ -12,7 +16,8 @@ app = FastAPI(
     version="1.0.0",
 )
 
-############## THREADS ##############################################################
+
+############## Threads ##############################################################
 @app.get("/threads")
 async def get_threads_running():
     return {
@@ -21,31 +26,75 @@ async def get_threads_running():
         }
 ######################################################################################
 
+
 ############## Auto Tagging ##########################################################
 @app.post("/auto_tag")
 async def auto_tagging(request: Data):
     base64ToImage(request.image)
     tags = request.tags
-
+    training_response = "No training requested"
+    response = {}
     persons, generated_tags = get_tags_and_person_mask()
-    if tags.get("category") == "human":
+
+    custom_tags = get_custom_tags()
+    for custom_tag in custom_tags:
+        generated_tags.append(custom_tag)
+
+    if "person" in generated_tags:
         for person in persons:
             name = recog_faces(person)
             if name != []:
                 generated_tags.append(name[0])
         if tags.get("name"):
             print(await add_face(tags["name"]))
-    response = {"tags": set(generated_tags)}
+    
+    if tags.get("tag"):
+        if tags["tag"].get("class") and tags["tag"].get("pixel_box"):
+            training_response = "Inititaing Training"
+            await add_class(tags["tag"]["class"], tags["tag"]["pixel_box"])
+        else:
+            training_response = "Class or pixel box missing which is required for training"
+    response["tags"] = set(generated_tags)
+    response["training_response"] = training_response
     await clear_temp()
     return response
 ######################################################################################
+
+
+############## Custom Object Detection ###############################################
+@app.get("/train_custom_model")
+async def train_custom_model():
+    if len(CUSTOM_CLASS_LIST["class_list"]) == 0:
+        return {'result': 'No data to train on'}
+    if CUSTOM_CLASS_LIST["training_status"]:
+        return {'result': 'Model already training'}
+    else:
+        CUSTOM_CLASS_LIST["training_status"] = True
+        await train_custom_object_detection(25)
+        return {'result': 'Training started'}
+
+
+@app.get("/get_training_status")
+async def get_training_status():
+    if CUSTOM_CLASS_LIST["training_status"]:
+        return {'result': 'Model training'}
+    else:
+        return {'result': 'Model trained'}
+
+
+@app.get("/get_custom_class_info")
+async def get_custom_class_info():
+    return CUSTOM_CLASS_LIST
+######################################################################################
+
 
 ############## Face Recognition ######################################################
 @app.get("/reset_facial_data")
 async def reset_facial_data():
     save_data([], [])
-    return "{'result': 'Face data reset succesfully'}"
+    return {'result': 'Face data reset succesfully'}
 ######################################################################################
+
 
 ############## Documentation #########################################################
 def custom_openapi():

@@ -1,4 +1,4 @@
 tagging/
 **/__pycache__
-fastapi/yolov8m.pt
+fastapi/models/**
 .vscode
