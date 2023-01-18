@@ -13,7 +13,7 @@ CLASS_LIST = [
     'book', 'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
 ]
 
-model = YOLO('yolov8s.pt')
+model = YOLO('yolov8m.pt')
 model.fuse()
 
 def show_crop(img, box):
