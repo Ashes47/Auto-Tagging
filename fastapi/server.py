@@ -7,7 +7,7 @@ from face_recog import save_data, get_device, add_face, recog_faces
 from object_detection import get_tags_and_person_mask
 from constants import CUSTOM_CLASS_LIST
 from custom_object_detection import get_custom_tags
-from custom_object_detection_utils import add_class, train_custom_object_detection
+from custom_object_detection_utils import add_classes, train_custom_object_detection
 import os
 
 
@@ -44,7 +44,7 @@ def auto_tagging(request: Data):
     if tags.get("tag"):
         if tags["tag"].get("class") and tags["tag"].get("pixel_box"):
             training_response = "Added data for training"
-            class_addition = threading.Thread(target=add_class, name="Add Custom Class", args=[tags["tag"]["class"], tags["tag"]["pixel_box"]])
+            class_addition = threading.Thread(target=add_classes, name="Add Custom Class", args=[tags["tag"]["class"], tags["tag"]["pixel_box"]])
             class_addition.start()
         else:
             training_response = "Class or pixel box missing which is required for training"

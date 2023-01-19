@@ -11,8 +11,8 @@ class Data(BaseModel):
                 "tags": {
                     "name": "Cristiano Ronaldo",
                     "tag": {
-                        "class": "fish",
-                        "pixel_box": [147, 54, 1073, 1200]
+                        "class": ["fish"],
+                        "pixel_box": [[147, 54, 1073, 1200]]
                     }
                 }
             }

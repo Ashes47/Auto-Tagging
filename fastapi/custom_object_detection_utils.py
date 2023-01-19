@@ -80,6 +80,11 @@ def save_image_info(folder_to_save, unique_name, image, class_count, yolo_box):
     write_yaml()
 
 
+def add_classes(custom_classes, pixel_boxes):
+    for custom_class, pixel_box in zip(custom_classes, pixel_boxes):
+        add_class(custom_class, pixel_box)
+
+
 def add_class(custom_class, pixel_box):
     image = cv2.imread(temp_file)
     image_height, image_width, _ = image.shape
