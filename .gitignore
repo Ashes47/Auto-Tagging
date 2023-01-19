@@ -3,3 +3,5 @@ tagging/
 fastapi/**/yolov8m.pt
 .vscode
 fastapi/**/labels.cache
+.ipynb_checkpoints/
+test.ipynb

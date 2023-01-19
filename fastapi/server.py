@@ -8,6 +8,7 @@ from object_detection import get_tags_and_person_mask
 from constants import CUSTOM_CLASS_LIST
 from custom_object_detection import get_custom_tags
 from custom_object_detection_utils import add_class, train_custom_object_detection
+import os
 
 
 app = FastAPI(
@@ -24,9 +25,10 @@ def auto_tagging(request: Data):
     tags = request.tags
     training_response = "No training requested"
     response = {}
-    persons, generated_tags = get_tags_and_person_mask()
 
+    persons, generated_tags = get_tags_and_person_mask()
     custom_tags = get_custom_tags()
+
     for custom_tag in custom_tags:
         generated_tags.append(custom_tag)
 
@@ -36,17 +38,20 @@ def auto_tagging(request: Data):
             if name != []:
                 generated_tags.append(name[0])
         if tags.get("name"):
-            print(add_face(tags["name"]))
+            face_addition = threading.Thread(target=add_face, name="Add Face data", args=[tags["name"]])
+            face_addition.start()
     
     if tags.get("tag"):
         if tags["tag"].get("class") and tags["tag"].get("pixel_box"):
             training_response = "Added data for training"
-            add_class(tags["tag"]["class"], tags["tag"]["pixel_box"])
+            class_addition = threading.Thread(target=add_class, name="Add Custom Class", args=[tags["tag"]["class"], tags["tag"]["pixel_box"]])
+            class_addition.start()
         else:
             training_response = "Class or pixel box missing which is required for training"
     response["tags"] = set(generated_tags)
     response["training_response"] = training_response
-    clear_temp()
+    temp_clear = threading.Thread(target=clear_temp, name="Clear Temp files")
+    temp_clear.start()
     return response
 ######################################################################################
 
@@ -56,25 +61,28 @@ def auto_tagging(request: Data):
 def train_custom_model():
     if len(CUSTOM_CLASS_LIST["class_list"]) == 0:
         return {'result': 'No data to train on'}
+
     if CUSTOM_CLASS_LIST["training_status"]:
         return {'result': 'Model already training'}
     else:
-        CUSTOM_CLASS_LIST["training_status"] = True
         try:
-            train_custom_object_detection(1)
+            CUSTOM_CLASS_LIST["training_status"] = True
+            train_custom_model = threading.Thread(target=train_custom_object_detection, name="Train custom model", args=[25])
+            train_custom_model.start()
         except Exception as e:
-            CUSTOM_CLASS_LIST["training_status"] = False
             return {'result': 'Training Failed', 'error': e}
-        CUSTOM_CLASS_LIST["training_status"] = False
         return {'result': 'Training started'}
 
 
 @app.get("/get_training_status")
 def get_training_status():
     if CUSTOM_CLASS_LIST["training_status"]:
-        return {'result': 'Model training'}
+        return {'result': 'Model is training...'}
     else:
-        return {'result': 'Model trained'}
+        if os.path.exists("./models/custom_model.pt"):
+            return {'result': 'Model trained'}
+        else:
+            return {'result': 'No model trained'}
 
 
 @app.get("/get_custom_class_info")

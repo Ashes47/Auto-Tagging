@@ -100,5 +100,8 @@ def train_custom_object_detection(epochs):
     model = YOLO(model_name)  # load a pretrained model (recommended for training)
     # Use the model
     model.train(data="data.yaml", epochs=epochs, imgsz=640)
+    CUSTOM_CLASS_LIST["training_status"] = False
+    if os.path.exists("./models/custom_model.pt"):
+        os.remove("./models/custom_model.pt")
     os.rename("./runs/detect/train/weights/best.pt", "./models/custom_model.pt")
     shutil.rmtree("runs")
