@@ -4,7 +4,7 @@ This app allows one to generate tag's for any image extending Yolov8 and vggface
 
 ## Features
 
-- Detect object (using Yolov8)
+- Detect objects (using Yolov8)
 - Recognize faces (facenet-pytorch)
 - Train on custom classes (Using Yolov8 pretrained model)
 - Train to recognize faces (With 1 image per class)
