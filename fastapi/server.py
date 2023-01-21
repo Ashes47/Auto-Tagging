@@ -54,6 +54,11 @@ def auto_tagging(request: Data):
     if "person" in generated_tags:
         for person in persons:
             name, bounding_box_face = recog_faces(person)
+            if request.tags and request.tags.get("tag"):
+                tags = request.tags
+                if tags["tag"].get("class") and tags["tag"].get("pixel_box"):
+                    face_addition = threading.Thread(target=add_faces, name="Add Face data", args=[tags["tag"]["class"], tags["tag"]["pixel_box"]])
+                    face_addition.start()
 
             if name != []:
                 tags_f["tag"].append(name[0])
@@ -67,9 +72,6 @@ def auto_tagging(request: Data):
 
             class_addition = threading.Thread(target=add_classes, name="Add Custom Class", args=[tags["tag"]["class"], tags["tag"]["pixel_box"]])
             class_addition.start()
-
-            face_addition = threading.Thread(target=add_faces, name="Add Face data", args=[tags["tag"]["class"], tags["tag"]["pixel_box"]])
-            face_addition.start()
         else:
             training_response = "Class or pixel box missing which is required for training"
 

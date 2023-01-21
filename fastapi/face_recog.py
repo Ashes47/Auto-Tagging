@@ -119,9 +119,7 @@ def recog_faces(image):
 
 def add_faces(classes, pixelboxes):
   for new_class, pixelbox in zip(classes, pixelboxes):
-    if new_class[0:6] == "name: ":
-      name = new_class[6:]
-      print(f"{name} is being added")
-      image = cv2.imread(temp_file)
-      image = show_crop(image, pixelbox)
-      print(add_face(name, Image.fromarray(image), pixelboxes))
+    print(f"{new_class} is being added")
+    image = cv2.imread(temp_file)
+    image = show_crop(image, pixelbox)
+    print(add_face(new_class, Image.fromarray(image), pixelboxes))
