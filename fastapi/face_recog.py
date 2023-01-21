@@ -52,7 +52,8 @@ def get_accurate_detections(aligned_images, probs):
 
 def get_emb(image):
   aligned_images, probs = mtcnn(image, return_prob=True)
-  if probs == [None]:
+  print(probs)
+  if probs[0] == None:
     print("No face found")
     return []
   aligned = get_accurate_detections(aligned_images, probs)
