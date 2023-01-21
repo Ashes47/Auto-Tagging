@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 import threading
+import numpy as np
 from models import Data
 from utils import save_image_from_url, clear_temp
 from face_recog import save_data, get_device, add_faces, recog_faces
@@ -34,18 +35,29 @@ def auto_tagging(request: Data):
 
     training_response = "No training requested"
     response = {}
-    
-    persons, generated_tags = get_tags_and_person_mask()
-    custom_tags = get_custom_tags()
+    tags_f = {
+        "tag": [],
+        "bbox": []
+    }
+    persons, generated_tags, bounding_box_object = get_tags_and_person_mask()
 
-    for custom_tag in custom_tags:
-        generated_tags.append(custom_tag)
+    for generated_tag, bbox, in zip(generated_tags, bounding_box_object):
+        tags_f["tag"].append(generated_tag)
+        tags_f["bbox"].append(bbox)
+
+    custom_tags , bounding_box_custom= get_custom_tags()
+
+    for custom_tag, bounding_box_custome_one in zip(custom_tags, bounding_box_custom):
+        tags_f["tag"].append(custom_tag)
+        tags_f["bbox"].append(bounding_box_custome_one)
 
     if "person" in generated_tags:
         for person in persons:
-            name = recog_faces(person)
+            name, bounding_box_face = recog_faces(person)
+
             if name != []:
-                generated_tags.append(name[0])
+                tags_f["tag"].append(name[0])
+                tags_f["bbox"].append(bounding_box_face[0][0])
 
     if request.tags and request.tags.get("tag"):
         tags = request.tags
@@ -61,8 +73,18 @@ def auto_tagging(request: Data):
         else:
             training_response = "Class or pixel box missing which is required for training"
 
-    response["tags"] = set(generated_tags)
+    response_tags = []
+    print(tags_f)
+    for i in tags_f["bbox"]:
+        temp = []
+        for j in i:
+            j = temp.append(str(j))
+        response_tags.append(temp)
+    tags_f["bbox"] = response_tags
+
+    response["tags"] = tags_f
     response["training_response"] = training_response
+    print(response)
     return response
 ######################################################################################
 
@@ -105,7 +127,7 @@ def get_custom_class_info():
 ############## Face Recognition ######################################################
 @app.get("/reset_facial_data")
 def reset_facial_data():
-    save_data([], [])
+    save_data([], [], [])
     return {'result': 'Face data reset succesfully'}
 ######################################################################################
 

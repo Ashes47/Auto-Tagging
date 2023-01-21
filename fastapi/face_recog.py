@@ -6,7 +6,7 @@ from scipy.spatial.distance import cosine
 from PIL import Image
 import cv2
 import os
-from constants import temp_file, embeddings_name, identity_name
+from constants import temp_file, embeddings_name, identity_name, pixelboxes_name
 from object_detection import show_crop
 
 
@@ -24,22 +24,28 @@ def get_device():
 
 
 def load_data():
-    embeddings=[]
+    embeddings = []
     identity = []
+    pixelboxes =[]
     if os.path.exists(embeddings_name):
       with open(embeddings_name,"rb") as f:
           embeddings = pickle.load(f)
     if os.path.exists(identity_name):
       with open(identity_name,"rb") as f:
           identity = pickle.load(f)
-    return embeddings, identity
+    if os.path.exists(pixelboxes_name):
+      with open(pixelboxes_name,"rb") as f:
+          pixelboxes = pickle.load(f)
+    return embeddings, identity, pixelboxes
 
 
-def save_data(embeddings, identity):
+def save_data(embeddings, identity, pixelboxes):
   with open(embeddings_name, "wb") as fp: 
     pickle.dump(embeddings, fp)    
   with open(identity_name, "wb") as fp:  
     pickle.dump(identity, fp)
+  with open(pixelboxes_name, "wb") as fp:  
+    pickle.dump(pixelboxes, fp)
 
 
 def get_accurate_detections(aligned_images, probs):
@@ -61,21 +67,30 @@ def get_emb(image):
   return embeddings
 
 
-def add_face(name, image):
-  embeddings, identity = load_data()
+def add_face(name, image, bboxes):
+  embeddings, identity, pixelboxes = load_data()
   emb = get_emb(image)
   if len(emb) == 0:
     return "No face found"
   embeddings.append(emb[0])
   identity.append(name)
-  save_data(embeddings, identity)
+
+  bboxes_save = []
+  for i in bboxes:
+    temp = []
+    for j in i:
+      j = temp.append(str(j))
+    bboxes_save.append(temp)
+  pixelboxes.append(bboxes_save)
+  
+  save_data(embeddings, identity, pixelboxes)
   return "Face successfully added"
 
 
 def match_face_with_database(new_emb):
-  embeddings, identity = load_data()
+  embeddings, identity, pixelboxes = load_data()
   if len(embeddings) == 0:
-    return []
+    return [], []
   ans = []
   for emb in embeddings:
       ans.append(cosine(emb,new_emb))
@@ -84,18 +99,20 @@ def match_face_with_database(new_emb):
   prettyPer = "{:.2f}".format(per)
   print('Matched with {} with {}%'.format(identity[index[0]],prettyPer))
   if per > 70.00:
-    return identity[index[0]]
-  return []
+    return identity[index[0]], pixelboxes[index[0]]
+  return [], []
 
 
 def recog_faces(image):
-  embs = get_emb(image)
+  embs  = get_emb(image)
   tags = []
+  bbox = []
   for emb in embs:
-    name = match_face_with_database(emb)
+    name, box = match_face_with_database(emb)
     if name != []:
       tags.append(name)
-  return tags
+      bbox.append(box)
+  return tags, bbox
 
 def add_faces(classes, pixelboxes):
   for new_class, pixelbox in zip(classes, pixelboxes):
@@ -104,4 +121,4 @@ def add_faces(classes, pixelboxes):
       print(f"{name} is being added")
       image = cv2.imread(temp_file)
       image = show_crop(image, pixelbox)
-      print(add_face(name, Image.fromarray(image)))
+      print(add_face(name, Image.fromarray(image), pixelboxes))

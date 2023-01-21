@@ -13,11 +13,14 @@ def get_tags_and_person_mask():
   results = model.predict(source=temp_file, conf=0.7)
   persons = []
   tags = []
+  bbox= []
   for result in results:
     boxes = result.cpu().boxes.numpy()
     for i in range(0,len(boxes)):
+      bbox.append(boxes.xyxy[i])
       print(f"{CLASS_LIST[int(boxes.cls[i])]}: {boxes.conf[i]}%")
       if CLASS_LIST[int(boxes.cls[i])] == "person":
         persons.append(show_crop(cv2.imread(temp_file), boxes.xyxy[i]))
       tags.append(CLASS_LIST[int(boxes.cls[i])])
-  return persons, tags
+  print(bbox)
+  return persons, tags, bbox

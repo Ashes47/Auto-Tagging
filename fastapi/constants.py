@@ -17,6 +17,7 @@ model_name = "models/yolov8m.pt"
 custom_model_name = "models/custom_model.pt"
 embeddings_name = "embeddings.txt"
 identity_name = "identity.txt"
+pixelboxes_name = "pixelboxes_name.txt"
 
 CUSTOM_CLASS_LIST = {
     "next_class_counter": 0,
