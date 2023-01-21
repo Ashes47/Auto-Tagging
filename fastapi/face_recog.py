@@ -53,7 +53,10 @@ def get_accurate_detections(aligned_images, probs):
   for image, prob in zip(aligned_images, probs):
     if prob > 0.9:
       aligned.append(image)
-  return torch.stack(aligned)
+  if aligned:
+    return torch.stack(aligned)
+  else:
+    return torch.tensor([])
   
 
 def get_emb(image):
