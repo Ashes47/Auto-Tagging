@@ -29,11 +29,12 @@ app.add_middleware(
 ############## Auto Tagging ##########################################################
 @app.post("/auto_tag")
 def auto_tagging(request: Data):
+    clear_temp()
     save_image_from_url(request.image)
 
     training_response = "No training requested"
     response = {}
-
+    
     persons, generated_tags = get_tags_and_person_mask()
     custom_tags = get_custom_tags()
 
@@ -62,8 +63,6 @@ def auto_tagging(request: Data):
 
     response["tags"] = set(generated_tags)
     response["training_response"] = training_response
-    temp_clear = threading.Thread(target=clear_temp, name="Clear Temp files")
-    temp_clear.start()
     return response
 ######################################################################################
 
