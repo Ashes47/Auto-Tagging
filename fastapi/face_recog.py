@@ -66,6 +66,8 @@ def get_emb(image):
     print("No face found")
     return []
   aligned = get_accurate_detections(aligned_images, probs)
+  if len(aligned) == 0:
+    return []
   embeddings = resnet(aligned).detach().cpu()
   return embeddings
 
