@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import threading
 from models import Data
 from utils import save_image_from_url, clear_temp
-from face_recog import save_data, get_device, add_face, recog_faces
+from face_recog import save_data, get_device, add_faces, recog_faces
 from object_detection import get_tags_and_person_mask
 from constants import CUSTOM_CLASS_LIST
 from custom_object_detection import get_custom_tags
@@ -30,7 +30,7 @@ app.add_middleware(
 @app.post("/auto_tag")
 def auto_tagging(request: Data):
     save_image_from_url(request.image)
-    tags = request.tags
+
     training_response = "No training requested"
     response = {}
 
@@ -45,17 +45,21 @@ def auto_tagging(request: Data):
             name = recog_faces(person)
             if name != []:
                 generated_tags.append(name[0])
-        if tags.get("name"):
-            face_addition = threading.Thread(target=add_face, name="Add Face data", args=[tags["name"]])
-            face_addition.start()
-    
-    if tags.get("tag"):
+
+    if request.tags and request.tags.get("tag"):
+        tags = request.tags
+
         if tags["tag"].get("class") and tags["tag"].get("pixel_box"):
             training_response = "Added data for training"
+
             class_addition = threading.Thread(target=add_classes, name="Add Custom Class", args=[tags["tag"]["class"], tags["tag"]["pixel_box"]])
             class_addition.start()
+
+            face_addition = threading.Thread(target=add_faces, name="Add Face data", args=[tags["tag"]["class"], tags["tag"]["pixel_box"]])
+            face_addition.start()
         else:
             training_response = "Class or pixel box missing which is required for training"
+
     response["tags"] = set(generated_tags)
     response["training_response"] = training_response
     temp_clear = threading.Thread(target=clear_temp, name="Clear Temp files")
