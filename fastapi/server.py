@@ -3,7 +3,7 @@ from fastapi.openapi.utils import get_openapi
 from fastapi.middleware.cors import CORSMiddleware
 import threading
 from models import Data
-from utils import base64ToImage, clear_temp
+from utils import save_image_from_url, clear_temp
 from face_recog import save_data, get_device, add_face, recog_faces
 from object_detection import get_tags_and_person_mask
 from constants import CUSTOM_CLASS_LIST
@@ -29,7 +29,7 @@ app.add_middleware(
 ############## Auto Tagging ##########################################################
 @app.post("/auto_tag")
 def auto_tagging(request: Data):
-    base64ToImage(request.image)
+    save_image_from_url(request.image)
     tags = request.tags
     training_response = "No training requested"
     response = {}

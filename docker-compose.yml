@@ -1,8 +1,8 @@
-version: '1'
+version: "2"
 
 services:
   fastapi:
     build: fastapi/
-    ports: 
+    ports:
       - 8000:8000
     container_name: fastapi
