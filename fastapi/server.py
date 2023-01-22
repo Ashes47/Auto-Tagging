@@ -63,7 +63,6 @@ def auto_tagging(request: Data):
             face_addition.start()
 
             training_response = "Added data for training"
-            # TODO Only happen when face is not detected detected
             class_addition = threading.Thread(target=add_classes, name="Add Custom Class", args=[tags["tag"]["class"], tags["tag"]["pixel_box"]])
             class_addition.start()
         else:
