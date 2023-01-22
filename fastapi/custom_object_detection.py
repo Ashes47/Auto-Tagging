@@ -10,7 +10,7 @@ def get_custom_tags():
     tags = []
     bbox = []
     if not os.path.exists(custom_model_name):
-        return tags
+        return tags, bbox
     results = custom_model.predict(source=temp_file, conf=0.7)
     for result in results:
         boxes = result.cpu().boxes.numpy()

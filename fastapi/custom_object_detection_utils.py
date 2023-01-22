@@ -4,6 +4,10 @@ import cv2
 import os
 import shutil
 from ultralytics import YOLO
+from face_recog import mtcnn
+from object_detection import show_crop
+from PIL import Image
+
 
 def save_custom_info():
     with open('CUSTOM_CLASS_LIST.txt', "wb") as fp:  
@@ -23,6 +27,7 @@ def pixel_box_to_yolobox(pixel_box, image_width, image_height):
 def define_new_class(custom_class):
     custom_class_count = CUSTOM_CLASS_LIST["next_class_counter"]
     CUSTOM_CLASS_LIST["next_class_counter"] += 1
+    CUSTOM_CLASS_LIST["next_unique_name"] += 1
     CUSTOM_CLASS_LIST[custom_class] = {
         "class_count": custom_class_count,
         "class_split_count": 0,
@@ -41,8 +46,8 @@ def update_class_details(custom_class, folder_to_save):
     save_custom_info()
 
 
-def get_unique_name(custom_class, folder_to_save):
-    return str(CUSTOM_CLASS_LIST[custom_class][folder_to_save])
+def get_unique_name():
+    return str(CUSTOM_CLASS_LIST["next_unique_name"])
 
 
 def save_image(folder_to_save, unique_name, image):
@@ -82,7 +87,11 @@ def save_image_info(folder_to_save, unique_name, image, class_count, yolo_box):
 
 def add_classes(custom_classes, pixel_boxes):
     for custom_class, pixel_box in zip(custom_classes, pixel_boxes):
-        add_class(custom_class, pixel_box)
+        image = cv2.imread(temp_file)
+        cropped = show_crop(image, pixel_box)
+        face = mtcnn(Image.fromarray(cropped))
+        if face is None:
+            add_class(custom_class, pixel_box)
 
 
 def add_class(custom_class, pixel_box):
@@ -98,7 +107,7 @@ def add_class(custom_class, pixel_box):
     folder_to_save = CUSTOM_CLASS_LIST["split"][split_index]
 
     update_class_details(custom_class, folder_to_save)
-    unique_name = get_unique_name(custom_class, folder_to_save)
+    unique_name = get_unique_name()
     save_image_info(folder_to_save, unique_name, image, class_count, yolo_box)
 
 def train_custom_object_detection(epochs):

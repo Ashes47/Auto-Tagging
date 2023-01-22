@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import threading
 import numpy as np
 from models import Data
-from utils import save_image_from_url, clear_temp
+from utils import save_image_from_url, clear_temp,clear_custom_data
 from face_recog import save_data, get_device, add_faces, recog_faces
 from object_detection import get_tags_and_person_mask
 from constants import CUSTOM_CLASS_LIST
@@ -39,7 +39,7 @@ def auto_tagging(request: Data):
         "tag": [],
         "bbox": []
     }
-    persons, generated_tags, bounding_box_object = get_tags_and_person_mask()
+    generated_tags, bounding_box_object = get_tags_and_person_mask()
 
     for generated_tag, bbox, in zip(generated_tags, bounding_box_object):
         tags_f["tag"].append(generated_tag)
@@ -51,25 +51,19 @@ def auto_tagging(request: Data):
         tags_f["tag"].append(custom_tag)
         tags_f["bbox"].append(bounding_box_custome_one)
 
-    if "person" in generated_tags:
-        for person in persons:
-            name, bounding_box_face = recog_faces(person)
-            if request.tags and request.tags.get("tag"):
-                tags = request.tags
-                if tags["tag"].get("class") and tags["tag"].get("pixel_box"):
-                    face_addition = threading.Thread(target=add_faces, name="Add Face data", args=[tags["tag"]["class"], tags["tag"]["pixel_box"]])
-                    face_addition.start()
-
-            if name != []:
-                tags_f["tag"].append(name[0])
-                tags_f["bbox"].append(bounding_box_face[0][0])
+    name, bounding_box_face = recog_faces()
+    for generated_tag, bbox, in zip(name, bounding_box_face):
+        tags_f["tag"].append(generated_tag)
+        tags_f["bbox"].append(bbox)
 
     if request.tags and request.tags.get("tag"):
         tags = request.tags
-
         if tags["tag"].get("class") and tags["tag"].get("pixel_box"):
-            training_response = "Added data for training"
+            face_addition = threading.Thread(target=add_faces, name="Add Face data", args=[tags["tag"]["class"], tags["tag"]["pixel_box"]])
+            face_addition.start()
 
+            training_response = "Added data for training"
+            # TODO Only happen when face is not detected detected
             class_addition = threading.Thread(target=add_classes, name="Add Custom Class", args=[tags["tag"]["class"], tags["tag"]["pixel_box"]])
             class_addition.start()
         else:
@@ -127,10 +121,11 @@ def get_custom_class_info():
 
 
 ############## Face Recognition ######################################################
-@app.get("/reset_facial_data")
-def reset_facial_data():
-    save_data([], [], [])
-    return {'result': 'Face data reset succesfully'}
+@app.get("/reset_training_data")
+def reset_training_data():
+    save_data([], [])
+    clear_custom_data()    
+    return {'result': 'Data reset succesfully'}
 ######################################################################################
 
 

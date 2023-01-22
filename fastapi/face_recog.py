@@ -6,7 +6,7 @@ from scipy.spatial.distance import cosine
 from PIL import Image
 import cv2
 import os
-from constants import temp_file, embeddings_name, identity_name, pixelboxes_name
+from constants import temp_file, embeddings_name, identity_name
 from object_detection import show_crop
 
 
@@ -26,33 +26,29 @@ def get_device():
 def load_data():
     embeddings = []
     identity = []
-    pixelboxes =[]
     if os.path.exists(embeddings_name):
       with open(embeddings_name,"rb") as f:
           embeddings = pickle.load(f)
     if os.path.exists(identity_name):
       with open(identity_name,"rb") as f:
           identity = pickle.load(f)
-    if os.path.exists(pixelboxes_name):
-      with open(pixelboxes_name,"rb") as f:
-          pixelboxes = pickle.load(f)
-    return embeddings, identity, pixelboxes
+    return embeddings, identity
 
 
-def save_data(embeddings, identity, pixelboxes):
+def save_data(embeddings, identity):
   with open(embeddings_name, "wb") as fp: 
     pickle.dump(embeddings, fp)    
   with open(identity_name, "wb") as fp:  
     pickle.dump(identity, fp)
-  with open(pixelboxes_name, "wb") as fp:  
-    pickle.dump(pixelboxes, fp)
 
 
-def get_accurate_detections(aligned_images, probs):
+def get_accurate_detections(faces, probs):
   aligned = []
-  for image, prob in zip(aligned_images, probs):
-    if prob > 0.9:
-      aligned.append(image)
+  for face, prob in zip(faces, probs):
+    print(prob)
+    if prob > 0.6:
+      if face is not None:
+        aligned.append(face.squeeze(0))
   if aligned:
     return torch.stack(aligned)
   else:
@@ -60,42 +56,49 @@ def get_accurate_detections(aligned_images, probs):
   
 
 def get_emb(image):
-  aligned_images, probs = mtcnn(image, return_prob=True)
-  print(probs)
+  boxes, probs = mtcnn.detect(Image.fromarray(image))
+  faces = mtcnn(image)
+
   if probs[0] == None:
     print("No face found")
-    return []
-  aligned = get_accurate_detections(aligned_images, probs)
+    return [], []
+
+  pixelbox = []
+  for i, k in zip(boxes, probs):
+    if k > 0.6:
+      temp = []
+      for j in i:
+        temp.append(int(j))
+      pixelbox.append(temp)
+  
+  # images = []
+  # for box in pixelbox:
+  #   images.append(show_crop(image, box))
+
+  # print(f"Cropped Faces found {len(images)}")
+
+  aligned = get_accurate_detections(faces, probs)
   if len(aligned) == 0:
-    return []
+    return [], []
   embeddings = resnet(aligned).detach().cpu()
-  return embeddings
+  return embeddings, pixelbox
 
 
-def add_face(name, image, bboxes):
-  embeddings, identity, pixelboxes = load_data()
-  emb = get_emb(image)
+def add_face(name, image):
+  embeddings, identity = load_data()
+  emb, pixelbox = get_emb(image)
   if len(emb) == 0:
     return "No face found"
   embeddings.append(emb[0])
   identity.append(name)
-
-  bboxes_save = []
-  for i in bboxes:
-    temp = []
-    for j in i:
-      j = temp.append(str(j))
-    bboxes_save.append(temp)
-  pixelboxes.append(bboxes_save)
-  
-  save_data(embeddings, identity, pixelboxes)
+  save_data(embeddings, identity)
   return "Face successfully added"
 
 
 def match_face_with_database(new_emb):
-  embeddings, identity, pixelboxes = load_data()
+  embeddings, identity = load_data()
   if len(embeddings) == 0:
-    return [], []
+    return ""
   ans = []
   for emb in embeddings:
       ans.append(cosine(emb,new_emb))
@@ -103,25 +106,31 @@ def match_face_with_database(new_emb):
   per = (1-ans[index[0]])*100
   prettyPer = "{:.2f}".format(per)
   print('Matched with {} with {}%'.format(identity[index[0]],prettyPer))
-  if per > 70.00:
-    return identity[index[0]], pixelboxes[index[0]]
-  return [], []
+  if per > 60.00:
+    return identity[index[0]]
+  return ""
 
 
-def recog_faces(image):
-  embs  = get_emb(image)
+def recog_faces():
+  image = cv2.imread(temp_file)
+  embs, face_bbox  = get_emb(image)
+  print(face_bbox)
   tags = []
   bbox = []
-  for emb in embs:
-    name, box = match_face_with_database(emb)
-    if name != []:
+  for i, emb in enumerate(embs):
+    name = match_face_with_database(emb)
+    print(name)
+    print(i)
+    print(face_bbox[i])
+    if name != "":
       tags.append(name)
-      bbox.append(box)
+      bbox.append(face_bbox[i])
   return tags, bbox
 
 def add_faces(classes, pixelboxes):
+  print(f"{classes} - {pixelboxes}")
   for new_class, pixelbox in zip(classes, pixelboxes):
     print(f"{new_class} is being added")
     image = cv2.imread(temp_file)
     image = show_crop(image, pixelbox)
-    print(add_face(new_class, Image.fromarray(image), pixelboxes))
+    print(add_face(new_class, image))
