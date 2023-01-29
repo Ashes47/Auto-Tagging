@@ -56,7 +56,7 @@ def get_accurate_detections(faces, probs):
   
 
 def get_emb(image):
-  boxes, probs = mtcnn.detect(Image.fromarray(image))
+  boxes, probs = mtcnn.detect(image)
   faces = mtcnn(image)
 
   if probs[0] == None:
@@ -70,12 +70,6 @@ def get_emb(image):
       for j in i:
         temp.append(int(j))
       pixelbox.append(temp)
-  
-  # images = []
-  # for box in pixelbox:
-  #   images.append(show_crop(image, box))
-
-  # print(f"Cropped Faces found {len(images)}")
 
   aligned = get_accurate_detections(faces, probs)
   if len(aligned) == 0:

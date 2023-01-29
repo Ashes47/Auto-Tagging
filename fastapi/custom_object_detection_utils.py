@@ -2,6 +2,7 @@ import pickle
 from constants import CUSTOM_CLASS_LIST, temp_file, model_name
 import cv2
 import os
+import pandas
 import shutil
 from ultralytics import YOLO
 from face_recog import mtcnn
@@ -27,7 +28,6 @@ def pixel_box_to_yolobox(pixel_box, image_width, image_height):
 def define_new_class(custom_class):
     custom_class_count = CUSTOM_CLASS_LIST["next_class_counter"]
     CUSTOM_CLASS_LIST["next_class_counter"] += 1
-    CUSTOM_CLASS_LIST["next_unique_name"] += 1
     CUSTOM_CLASS_LIST[custom_class] = {
         "class_count": custom_class_count,
         "class_split_count": 0,
@@ -47,6 +47,7 @@ def update_class_details(custom_class, folder_to_save):
 
 
 def get_unique_name():
+    CUSTOM_CLASS_LIST["next_unique_name"] += 1
     return str(CUSTOM_CLASS_LIST["next_unique_name"])
 
 
@@ -65,13 +66,15 @@ def save_label(folder_to_save, unique_name, class_count, yolo_box):
 def write_yaml():
     # Train/val/test sets as 1) dir: path/to/imgs, 2) file: path/to/imgs.txt, or 3) list: [path/to/imgs1, path/to/imgs2, ..]
     # dataset root dir
+    if os.path.exists("data.yaml"):
+        os.remove("data.yaml") 
     file = open("data.yaml", "w")
     file.writelines("path: " + os.getcwd() + "/custom_dataset/ \n")
     file.writelines("train: train/images/ \n") # train images (relative to 'path')
     file.writelines("val: valid/images/ \n") # val images (relative to 'path')
 
     # number of classes
-    file.writelines(f"nc: {CUSTOM_CLASS_LIST['next_class_counter']} \n")
+    file.writelines(f"nc: {len(CUSTOM_CLASS_LIST['class_list'])} \n")
 
     # class names
     #names: ['0', '1', '2']
@@ -111,11 +114,41 @@ def add_class(custom_class, pixel_box):
     save_image_info(folder_to_save, unique_name, image, class_count, yolo_box)
 
 def train_custom_object_detection(epochs):
+    if os.path.exists('./custom_dataset/train/labels.cache'):
+        os.remove('./custom_dataset/train/labels.cache')
+    if os.path.exists('./custom_dataset/valid/labels.cache'):
+        os.remove('./custom_dataset/valid/labels.cache')
+    if os.path.exists("./models/custom_model.pt"):
+        os.remove("./models/custom_model.pt")
+
     model = YOLO(model_name)  # load a pretrained model (recommended for training)
     # Use the model
     model.train(data="data.yaml", epochs=epochs, imgsz=640)
     CUSTOM_CLASS_LIST["training_status"] = False
-    if os.path.exists("./models/custom_model.pt"):
-        os.remove("./models/custom_model.pt")
     os.rename("./runs/detect/train/weights/best.pt", "./models/custom_model.pt")
     shutil.rmtree("runs")
+
+
+def delete_class(folder, class_number):
+    path = "./custom_dataset/" + folder + "/labels/"
+    image_path = "./custom_dataset/" + folder + "/images/"
+    for txt in os.listdir(path):
+        if txt[-4:] == ".txt":
+            file = pandas.read_csv(path + txt)
+            if int(file.columns[0].split(' ')[0]) == class_number:
+                print('Removing data')
+                os.remove(path+txt)
+                os.remove(image_path + txt[:-4] + '.jpg')
+
+
+def clear_custom_class(customClass):
+    if customClass in CUSTOM_CLASS_LIST["class_list"]:
+        index = CUSTOM_CLASS_LIST["class_list"].index(customClass)
+        classCount = CUSTOM_CLASS_LIST[customClass]["class_count"]
+        print(f"{customClass} with class Count {classCount} is being deleted")
+        CUSTOM_CLASS_LIST["class_list"] = CUSTOM_CLASS_LIST["class_list"][:index] + CUSTOM_CLASS_LIST["class_list"][index+1:]
+        CUSTOM_CLASS_LIST.pop(customClass)
+        delete_class("train", classCount)
+        delete_class("valid", classCount)
+        save_custom_info()
+        write_yaml()

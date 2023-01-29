@@ -32,7 +32,7 @@ CUSTOM_CLASS_LIST = {
         "valid",
         "valid"
         ],
-    "next_unique_name": 1,
+    "next_unique_name": 0,
     "training_status": False,
     "class_list": []
 }

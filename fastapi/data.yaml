@@ -1,5 +1,0 @@
-path: C:\Users\ashes\Desktop\Auto-Tagging\fastapi/custom_dataset/ 
-train: train/images/ 
-val: valid/images/ 
-nc: 1 
-names: ['dragon'] 
