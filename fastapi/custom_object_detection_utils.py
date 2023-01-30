@@ -30,7 +30,6 @@ def define_new_class(custom_class):
     CUSTOM_CLASS_LIST["next_class_counter"] += 1
     CUSTOM_CLASS_LIST[custom_class] = {
         "class_count": custom_class_count,
-        "class_split_count": 0,
         "train": 0,
         "valid": 0,
         "split_index": 0
