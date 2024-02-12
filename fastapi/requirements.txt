@@ -1,5 +1,5 @@
 fastapi==0.68.0
-python-multipart==0.0.5 
+python-multipart==0.0.7 
 aiofiles==0.4.0
 numpy
 gunicorn
